@@ -7,3 +7,17 @@
     background-image: url("https://cdn.pixabay.com/photo/2017/04/05/04/44/background-2203989_960_720.jpg");
     background-size: cover;
 }
+
+
+::-webkit-scrollbar {
+    width: 0px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(136, 136, 136, 0.281);
+  }
+  
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }

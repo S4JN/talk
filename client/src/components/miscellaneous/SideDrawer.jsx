@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Avatar, Box, Button, Drawer, DrawerContent, Input, DrawerBody, DrawerHeader, DrawerOverlay, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Text, Tooltip, useDisclosure, useToast } from '@chakra-ui/react';
+import { Avatar, Box, Button, Drawer, DrawerContent, Input, DrawerBody, DrawerHeader, DrawerOverlay, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Text, Tooltip, useDisclosure, useToast, Spinner } from '@chakra-ui/react';
 import { theme } from "@chakra-ui/react";
 import { BellIcon, ChevronDownIcon } from "@chakra-ui/icons"
 import { ChatState } from '../../context/ChatProvider';
@@ -15,7 +15,7 @@ const SideDrawer = () => {
   const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingChat, setLoadingChat] = useState();
-  const { user } = ChatState();
+  const { user, setSelectedChat, chats, setChats } = ChatState();
   const navigate = useNavigate();
   const { isOpen, onOpen, onClose } = useDisclosure();
   // useEffect(() => {
@@ -68,33 +68,35 @@ const SideDrawer = () => {
 
   }
 
-  const accessChat = async(userId) => {
+  const accessChat = async (userId) => {
     console.log(userId);
 
-    // try {
-    //   setLoadingChat(true);
-    //   const config = {
-    //     headers: {
-    //       "Content-type": "application/json",
-    //       Authorization: `Bearer ${user.data.token}`,
-    //     },
-    //   };
-    //   const { data } = await axios.post(`http://localhost:8080/api/chat`, { userId }, config);
+    try {
+      setLoadingChat(true);
+      const config = {
+        headers: {
+          "Content-type": "application/json",
+          Authorization: `Bearer ${user.data.token}`,
+        },
+      };
+      const { data } = await axios.post(`http://localhost:8080/api/chat`, { userId }, config);
 
-    //   if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
-    //   setSelectedChat(data);
-    //   setLoadingChat(false);
-    //   onClose();
-    // } catch (error) {
-    //   toast({
-    //     title: "Error fetching the chat",
-    //     description: error.message,
-    //     status: "error",
-    //     duration: 5000,
-    //     isClosable: true,
-    //     position: "bottom-left",
-    //   });
-    // }
+      if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
+      console.log(data);
+      setSelectedChat(data);
+      setLoadingChat(false);
+      onClose();
+    } catch (error) {
+      console.log(error);
+      toast({
+        title: "Error fetching the chat",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom-left",
+      });
+    }
   }
 
   useEffect(() => {
@@ -174,6 +176,7 @@ const SideDrawer = () => {
                 />
               ))
             )}
+            {loadingChat &&<Spinner ml="auto" display="flex" />}
           </DrawerBody>
 
         </DrawerContent>
