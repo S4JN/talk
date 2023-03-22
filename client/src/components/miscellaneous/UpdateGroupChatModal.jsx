@@ -31,10 +31,98 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
 
     const toast = useToast();
 
-    const handleRemove = () => {
+    const handleRemove = async (user1) => {
+        if (selectedChat.groupAdmin._id !== user.data._id && user1._id !== user.data._id) {
+            toast({
+                title: "Only admins can remove someone!",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "bottom"
+            });
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const config = {
+                headers: {
+                    Authorization: `Bearer ${user.data.token}`,
+                },
+            };
+
+            const { data } = await axios.put("http://localhost:8080/api/chat/groupremove", {
+                chatId: selectedChat._id,
+                userId: user1._id
+            }, config);
+
+            user1._id === user.data.id ? setSelectedChat() : setSelectedChat(data);
+            setFetchAgain(!fetchAgain);
+            setLoading(false);
+
+        } catch (error) {
+            toast({
+                title: "Error occured!",
+                description: error.message,
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "bottom",
+            });
+            setLoading(false);
+        }
+
 
     }
-    const handleAddUser= async() =>{
+    const handleAddUser = async (user1) => {
+        if (selectedChat.users.find((u) => u._id === user1._id)) {
+            toast({
+                title: "User Already in group!",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "bottom"
+            });
+            return;
+        }
+       // console.log(user.data._id);
+        if (selectedChat.groupAdmin._id !== user.data._id) {
+            toast({
+                title: "Only admins can add someone",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "bottom",
+            });
+            return;
+        }
+        try {
+            setLoading(true);
+            const config = {
+                headers: {
+                    Authorization: `Bearer ${user.data.token}`,
+                },
+            };
+            const { data } = await axios.put("http://localhost:8080/api/chat/groupadd", {
+                chatId: selectedChat._id,
+                userId: user1._id
+            }, config);
+
+            setSelectedChat(data);
+            setFetchAgain(!fetchAgain);
+            setLoading(false);
+
+        } catch (error) {
+            toast({
+                title: "Error occured!",
+                description: error.message,
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "bottom",
+            });
+            setLoading(false);
+        }
 
     }
 
@@ -58,6 +146,7 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
             console.log(data, "rename data");
             setFetchAgain(!fetchAgain);
             setRenameloading(false);
+
         } catch (error) {
             console.log(error);
             toast({
@@ -103,6 +192,8 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
             });
         }
     }
+
+
 
     return (
         <div>
@@ -173,9 +264,9 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
                     </ModalBody>
 
                     <ModalFooter>
-                        <Button colorScheme='red' onClick={() => handleRemove(user)}>
+                        {/* <Button colorScheme='red' onClick={() => handleLeave(user)}>
                             Leave Group
-                        </Button>
+                        </Button> */}
 
                     </ModalFooter>
                 </ModalContent>
