@@ -7,6 +7,12 @@ import TempProfileModal from "./miscellaneous/TeampProfileModal"
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal"
 import axios from 'axios';
 import ScrollableChat from './ScrollableChat';
+import io from "socket.io-client"
+import  Lottie  from "react-lottie"
+import animationData from "../animations/typing.json"
+
+const ENDPOINT = "http://localhost:8080";
+var socket, selectedChatCompare;
 
 
 
@@ -16,6 +22,21 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [newMessage, setNewMessage] = useState();
+    const [socketConnected, setSocketConnected] = useState(false);
+    const [typing, setTyping] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
+
+    const defaultOptions = {
+        loop: true,
+        autoplay: true,
+        animationData: animationData,
+        rendererSettings: {
+          preserveAspectRatio: "xMidYMid slice",
+        },
+      };
+    
+
+
     const toast = useToast();
 
     const fetchMessages = async () => {
@@ -33,8 +54,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             setMessages(data);
             //console.log(data,"data");
             //api working fine data m sahi saman aara h dkt niche vale ki h
-           console.log(messages);
+            // console.log(messages);
             setLoading(false);
+            socket.emit("join_chat", selectedChat._id);
         } catch (error) {
             console.log(error);
             toast({
@@ -48,14 +70,35 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         }
     }
 
-    useEffect(()=>{
+    useEffect(() => {
+        socket = io(ENDPOINT);
+        socket.emit("setup", user.data);
+        socket.on("connected", () => setSocketConnected(true));
+        socket.on("typing", () => setIsTyping(true))
+        socket.on("stop_typing", () => setIsTyping(false));
+    }, [])
+
+
+    useEffect(() => {
         fetchMessages();
-    },[selectedChat])
+        selectedChatCompare = selectedChat;
+    }, [selectedChat])
+
+    useEffect(() => {
+        socket.on("message_recived", (newMessageRecieved) => {
+            if (!selectedChatCompare || selectedChatCompare._id !== newMessageRecieved.chat._id) {
+                //give notification
+            } else {
+                setMessages([...messages, newMessageRecieved]);
+            }
+        })
+    })
 
 
     const sendMessage = async (event) => {
 
         if (event.key === "Enter" && newMessage) {
+            socket.emit("stop_typing", selectedChat._id);
             try {
                 const config = {
                     headers: {
@@ -70,6 +113,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 },
                     config);
                 console.log(data, "message");
+                socket.emit("new_message", data)
                 setMessages([...messages, data])
             } catch (error) {
                 toast({
@@ -84,9 +128,32 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         }
 
     }
+
+
+
+
+
     const typingHandler = (e) => {
         setNewMessage(e.target.value);
         // typinglogic
+        if (!socketConnected) return;
+
+        if (!typing) {
+            setTyping(true);
+            socket.emit("typing", selectedChat._id)
+        }
+
+        let lastTypingTime = new Date().getTime()
+        var timerLength = 3000;
+        setTimeout(() => {
+            var timeNow = new Date().getTime()
+            var timeDiff = timeNow - lastTypingTime;
+            if (timeDiff >= timerLength && typing) {
+                socket.emit("stop_typing", selectedChat._id);
+                setTyping(false);
+            }
+        }, timerLength);
+
     }
 
     return (
@@ -111,7 +178,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                         {!selectedChat.isGroupChat ? (
                             <>
                                 {getSender(user, selectedChat.users)}
-                               <TempProfileModal user={getSenderFull(user, selectedChat.users)} />
+                                <TempProfileModal user={getSenderFull(user, selectedChat.users)} />
                             </>
                         ) : (
                             <>
@@ -153,6 +220,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                         )}
 
                         <FormControl onKeyDown={sendMessage} isRequired mt={3} >
+                            {isTyping ? <div> <Lottie options={defaultOptions} width={70} style={{marginBottom: 15, marginLeft: 0}} /> </div> : <></>}
                             <Input
                                 variant={"filled"}
                                 bg="#E0E0E0"
