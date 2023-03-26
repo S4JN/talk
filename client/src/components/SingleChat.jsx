@@ -8,7 +8,7 @@ import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal"
 import axios from 'axios';
 import ScrollableChat from './ScrollableChat';
 import io from "socket.io-client"
-import  Lottie  from "react-lottie"
+import Lottie from "react-lottie"
 import animationData from "../animations/typing.json"
 
 const ENDPOINT = "http://localhost:8080";
@@ -18,7 +18,7 @@ var socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
-    const { user, selectedChat, setSelectedChat } = ChatState();
+    const { user, selectedChat, setSelectedChat, notification, setNotification } = ChatState();
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [newMessage, setNewMessage] = useState();
@@ -31,10 +31,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         autoplay: true,
         animationData: animationData,
         rendererSettings: {
-          preserveAspectRatio: "xMidYMid slice",
+            preserveAspectRatio: "xMidYMid slice",
         },
-      };
-    
+    };
+
 
 
     const toast = useToast();
@@ -84,10 +84,16 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         selectedChatCompare = selectedChat;
     }, [selectedChat])
 
+
+
     useEffect(() => {
         socket.on("message_recived", (newMessageRecieved) => {
             if (!selectedChatCompare || selectedChatCompare._id !== newMessageRecieved.chat._id) {
                 //give notification
+                if(!notification.includes(newMessageRecieved)){
+                    setNotification([newMessageRecieved,...notification]);
+                    setFetchAgain(!fetchAgain);
+                }
             } else {
                 setMessages([...messages, newMessageRecieved]);
             }
@@ -220,7 +226,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                         )}
 
                         <FormControl onKeyDown={sendMessage} isRequired mt={3} >
-                            {isTyping ? <div> <Lottie options={defaultOptions} width={70} style={{marginBottom: 15, marginLeft: 0}} /> </div> : <></>}
+                            {isTyping ? <div> <Lottie options={defaultOptions} width={70} style={{ marginBottom: 15, marginLeft: 0 }} /> </div> : <></>}
                             <Input
                                 variant={"filled"}
                                 bg="#E0E0E0"
