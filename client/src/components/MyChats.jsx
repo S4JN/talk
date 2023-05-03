@@ -110,6 +110,7 @@ const MyChats = ({ fetchAgain, setFetchAgain }) => {
                       getSender(loggedUser, chat.users)
                     ) : (chat.chatName)}
                   </Text>
+                 
                 </Box>
               )
             })}
